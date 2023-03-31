@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <!-- ReplyMapper.xml는 mybatis를 통해 sql구문을 넣어주는 곳 -->
+ 
+ 
+<mapper namespace="com.keduit.mapper.ReplyMapper">
+	<insert id="insert">
+	 insert into tbl_reply (rno, bno, reply, replyer) 
+	 <!-- .nextval는 시퀀스의 다음 값을 불러오는 것(자동 증가) -->
+	 values (seq_reply.nextval, #{bno}, #{reply}, #{replyer})
+	</insert>
+ 
+ <select id="read" resultType="com.keduit.domain.ReplyVO">
+ 	select * from tbl_reply where rno=#{rno}
+ </select>
+ 
+ <select id="getListWithPaging" resultType="com.keduit.domain.ReplyVO">
+ <!-- sql에서 부등호를 사용하기 위해서 CDATA를 이용해야한다. -->
+ <![CDATA[
+ 	select rno, bno, reply, replyer, replyDate, updateDate 
+ 	from ( select /* + INDEX(tbl_reply idx_reply) */ rownum rn, rno, bno, reply, replyer, replyDate, updateDate
+ 		from tbl_reply where bno=#{bno} and rno > 0 and rownum <= #{cri.pageNum} * #{cri.amount} 
+ 	) where rn > (#{cri.pageNum} -1) * #{cri.amount}
+ ]]>
+ </select>
+ 
+ <select id="getCountByBno" resultType='int'>
+ 	select count(rno) from tbl_reply where bno = #{bno}
+ </select>
+ 
+ <delete id="delete">
+ 	delete from tbl_reply where rno = #{rno}
+ </delete>
+ 
+ <update id="update">
+ 	update tbl_reply set reply=#{reply}, updateDate=sysdate where rno=#{rno}
+ </update>
+ 
+ 
+</mapper>
