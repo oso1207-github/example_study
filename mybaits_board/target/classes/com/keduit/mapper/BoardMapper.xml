@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.keduit.mapper.BoardMapper">
+
+	<sql id="criteria">
+		<!-- prefix 속성 - <trim>태그 내부 실행될 쿼리문 앞에 설정해둔 속성값을 삽입합니다. -->
+		<!-- suffix 속성 - <trim>태그 내부 실행될 쿼리문 뒤에 설정해둔 속성값을 삽입합니다. -->
+		<!-- prefixOverrids 속성 - <trim>태그 내부 실행될 쿼리문 가장 앞의 단어가 속성값에 설쟁해둔 문자와 동일할 
+			경우 문자를 지웁니다. -->
+		<!-- suffixOverrids 속성 - <trim> 태그 내부 실행될 쿼리문 가장 뒤의 단어가 속성값에 설정해둔 문자와 동일한 
+			경우 문자를 지웁니다 -->
+			<trim prefix="(" suffix=") and " prefixOverrides="or">
+			<!-- getTypeArr()를 호출 -->
+			<foreach item='type' collection="typeArr">
+				<trim prefix="or">
+					<choose>
+						<when test="type=='T'.toString()">
+							<!-- '%'는 모든 문자 포함이므로 사용자가 입력하는 키워드 앞뒤에 어떤 값이 있더라도 가능 -->
+							title like '%' || #{keyword} || '%'
+						</when>
+						<when test="type=='C'.toString()">
+							content like '%' || #{keyword} || '%'
+						</when>
+						<when test="type=='W'.toString()">
+							writer like '%' || #{keyword} || '%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+
+<!--   <![CDATA[
+	rownum <= #{pageNum} * #{amount})
+			where rn > (#{pageNum} - 1) * #{amount}
+  ]]> -->
+
+
+	<select id="getList" resultType="com.keduit.domain.BoardVO">
+		select * from tbl_board order by bno DESC
+	</select>
+
+	<select id="getListWithPaging"
+		resultType="com.keduit.domain.BoardVO">
+
+		select bno, title, content, writer, regDate, updateDate from(
+		select /* + index_desc(tbl_board pk_board) */
+		rownum rn, bno, title, content, writer, regDate, updateDate
+		from tbl_board
+		where
+		<include refid="criteria"></include>
+        
+        
+  <![CDATA[
+	rownum <= #{pageNum} * #{amount})
+			where rn > (#{pageNum} - 1) * #{amount}
+  ]]>
+	</select>
+	
+
+	<insert id="insert">
+		insert into tbl_board(bno, title, content, writer)
+		values (seq_board.nextval, #{title}, #{content}, #{writer})
+	</insert>
+
+	<insert id="insertSelectKey">
+
+		<selectKey keyProperty="bno" order="BEFORE"
+			resultType="long">
+			select seq_board.nextval from dual
+		</selectKey>
+
+		insert into tbl_board(bno,title,content,writer)
+		values (#{bno}, #{title}, #{content}, #{writer})
+
+	</insert>
+
+
+	<select id="read" resultType="com.keduit.domain.BoardVO">
+		select * from tbl_board where bno = #{bno}
+	</select>
+
+	<delete id="delete">
+		delete from tbl_board where bno = #{bno}
+	</delete>
+
+	<update id="update">
+		update tbl_board set title=#{title},
+		content=#{content},
+		writer=#{writer},
+		updatedate=sysdate
+		where bno=#{bno}
+	</update>
+
+	<select id="getTotalCount" resultType="int">
+		select count(*) from tbl_board where 
+		<include refid="criteria"></include>
+		bno > 0
+	</select>
+
+
+</mapper>
